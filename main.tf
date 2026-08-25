@@ -38,41 +38,43 @@ resource "aws_cloudwatch_log_group" "mi_log_de_pruebas" {
   retention_in_days = 1
 }
 
-# 1. Crea el Proveedor OIDC con la URL exacta y las huellas digitales oficiales
+# 1. Crear el proveedor OIDC con la URL exacta requerida por GitHub
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://githubusercontent.com"
-  client_id_list  = ["://amazonaws.com"]
+  client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = ["1c58a3a8518e8759bf075b76b750d4f2df264fcd", "6938fd4d98bab03faadb97b34396831e3780aea1"]
 }
 
-# 2. Crea el Rol de IAM vinculando la confianza directamente al proveedor correcto
+# 2. Crear el Rol de IAM con una política de cadena limpia (sin variables complejas)
 resource "aws_iam_role" "rol_github" {
   name = "rol-github-actions-tofu"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect    = "Allow"
-        Principal = { Federated = aws_iam_openid_connect_provider.github.arn }
-        Action    = "sts:AssumeRoleWithWebIdentity"
-        Condition = {
-          StringEquals = { "token.actions.githubusercontent.com:aud" = "://amazonaws.com" }
-          StringLike   = { "token.actions.githubusercontent.com:sub" = "repo:${var.usuario_github}*" }
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::040949441765:oidc-provider/token.actions.githubusercontent.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+        },
+        "StringLike": {
+          "token.actions.githubusercontent.com:sub": "repo:ssilva1/*"
         }
       }
-    ]
-  })
+    }
+  ]
+}
+EOF
 }
 
-# 3. Adjunta los permisos de administrador al nuevo rol
+# 3. Adjuntar los permisos de administrador al nuevo rol
 resource "aws_iam_role_policy_attachment" "admin_attach" {
   role       = aws_iam_role.rol_github.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
-}
-
-# Variable para que pongas tu usuario de GitHub fácilmente
-variable "usuario_github" {
-  type    = string
-  default = "ssilva1" # REEMPLAZA SOLO ESTO CON TU NOMBRE DE USUARIO
 }
