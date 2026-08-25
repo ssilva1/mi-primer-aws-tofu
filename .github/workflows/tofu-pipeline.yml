@@ -6,8 +6,8 @@ on:
       - main
 
 permissions:
-  id-token: write # Requerido para pedir la clave temporal OIDC a AWS
-  contents: read  # Requerido para leer el código del repositorio
+  id-token: write # CRÍTICO: Permite a GitHub solicitar el token OIDC a AWS
+  contents: read  # Permite a GitHub leer el código de tu repositorio
 
 jobs:
   opentofu:
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Descarga el código de tu repositorio en el servidor de GitHub
+    # 1. Descarga el código de tu repositorio
     - name: Checkout Code
       uses: actions/checkout@v4
 
@@ -25,7 +25,6 @@ jobs:
       with:
         role-to-assume: arn:aws:iam::040949441765:role/rol-github-actions-tofu # TU ARN REAL
         aws-region: us-east-1
-        audience: https://token.actions.githubusercontent.com # FORZAMOS EL DESTINO GLOBAL
 
     # 3. Instala OpenTofu en el servidor de GitHub
     - name: Setup OpenTofu
@@ -33,14 +32,14 @@ jobs:
       with:
         tofu_version: 1.8.8
 
-    # 4. Inicializa OpenTofu (leerá el backend S3 en AWS automáticamente)
+    # 4. Inicializa OpenTofu leyendo el backend S3 en AWS
     - name: OpenTofu Init
       run: tofu init
 
-    # 5. Muestra qué cambios se van a realizar (Simulación)
+    # 5. Simulación de los cambios a realizar
     - name: OpenTofu Plan
       run: tofu plan
 
-    # 6. Aplica los cambios automáticamente en AWS de forma gratuita
+    # 6. Aplica los cambios automáticamente en AWS
     - name: OpenTofu Apply
       run: tofu apply -auto-approve
