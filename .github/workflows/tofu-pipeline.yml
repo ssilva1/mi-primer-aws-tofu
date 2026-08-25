@@ -26,6 +26,9 @@ jobs:
         role-to-assume: arn:aws:iam::040949441765:role/rol-github-actions-tofu # TU ARN REAL
         aws-region: us-east-1
 
+    - name: Verify AWS Identity
+      run: aws sts get-caller-identity
+
     # 3. Instala OpenTofu en el servidor de GitHub
     - name: Setup OpenTofu
       uses: opentofu/setup-opentofu@v1

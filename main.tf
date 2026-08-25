@@ -38,30 +38,36 @@ resource "aws_cloudwatch_log_group" "mi_log_de_pruebas" {
   retention_in_days = 1
 }
 
-# 1. Crear el proveedor OIDC con la URL oficial estática (AWS no acepta asteriscos aquí)
+# GitHub Actions OIDC Provider
 resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://githubusercontent.com"
-  client_id_list  = ["://amazonaws.com"]
-  thumbprint_list = ["1c58a3a8518e8759bf075b76b750d4f2df264fcd", "6938fd4d98bab03faadb97b34396831e3780aea1"]
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
 }
 
-# 2. Crear el Rol de IAM con la política de confianza en formato JSON nativo
+# IAM Role asumible desde GitHub Actions
 resource "aws_iam_role" "rol_github" {
   name = "rol-github-actions-tofu"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
+
     Statement = [
       {
-        Effect    = "Allow"
-        Principal = { Federated = aws_iam_openid_connect_provider.github.arn }
-        Action    = "sts:AssumeRoleWithWebIdentity"
+        Effect = "Allow"
+
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.github.arn
+        }
+
+        Action = "sts:AssumeRoleWithWebIdentity"
+
         Condition = {
           StringEquals = {
-            "://githubusercontent.com:aud" = "://amazonaws.com"
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
+
           StringLike = {
-            "://githubusercontent.com:sub" = "repo:ssilva1/*"
+            "token.actions.githubusercontent.com:sub" = "repo:ssilva1/*"
           }
         }
       }
@@ -69,7 +75,6 @@ resource "aws_iam_role" "rol_github" {
   })
 }
 
-# 3. Adjuntar los permisos de administrador al nuevo rol
 resource "aws_iam_role_policy_attachment" "admin_attach" {
   role       = aws_iam_role.rol_github.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
