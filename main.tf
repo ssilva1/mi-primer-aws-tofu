@@ -62,15 +62,12 @@ resource "aws_iam_role" "rol_github" {
         Action = "sts:AssumeRoleWithWebIdentity"
 
         Condition = {
-          StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          }
-
-          StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:ssilva1/*"
-          }
+            StringEquals = {
+                "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+                "token.actions.githubusercontent.com:sub" = "repo:ssilva1@111023491/mi-primer-aws-tofu@1345413334:ref:refs/heads/main"
+            }
         }
-      }
+       }
     ]
   })
 }
