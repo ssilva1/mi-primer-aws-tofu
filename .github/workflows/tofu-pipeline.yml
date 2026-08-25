@@ -23,8 +23,9 @@ jobs:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: arn:aws:iam::040949441765:role/rol-github-actions-tofu # REEMPLAZA CON TU ARN REAL
+        role-to-assume: arn:aws:iam::040949441765:role/rol-github-actions-tofu # TU ARN REAL
         aws-region: us-east-1
+        audience: https://token.actions.githubusercontent.com # FORZAMOS EL DESTINO GLOBAL
 
     # 3. Instala OpenTofu en el servidor de GitHub
     - name: Setup OpenTofu
