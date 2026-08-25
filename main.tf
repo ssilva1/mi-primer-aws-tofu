@@ -38,14 +38,15 @@ resource "aws_cloudwatch_log_group" "mi_log_de_pruebas" {
   retention_in_days = 1
 }
 
-# 1. Crear el proveedor OIDC con la URL exacta requerida por GitHub
+# 1. Crear el proveedor OIDC apuntando a la pasarela emisora de tu Action
 resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
+  # Cambiamos a la URL base que tu traza de depuración reportó como emisora
+  url             = "https://run-actions-1-azure-eastus.actions.githubusercontent.com"
+  client_id_list  = ["://amazonaws.com"]
   thumbprint_list = ["1c58a3a8518e8759bf075b76b750d4f2df264fcd", "6938fd4d98bab03faadb97b34396831e3780aea1"]
 }
 
-# 2. Crear el Rol de IAM con una política de cadena limpia (sin variables complejas)
+# 2. Actualizar el Rol de IAM para que coincida exactamente con el nuevo dominio
 resource "aws_iam_role" "rol_github" {
   name = "rol-github-actions-tofu"
 
@@ -56,15 +57,15 @@ resource "aws_iam_role" "rol_github" {
     {
       "Effect": "Allow",
       "Principal": {
-        "Federated": "arn:aws:iam::040949441765:oidc-provider/token.actions.githubusercontent.com"
+        "Federated": "${aws_iam_openid_connect_provider.github.arn}"
       },
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
         "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+          "run-actions-1-azure-eastus.actions.githubusercontent.com:aud": "://amazonaws.com"
         },
         "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:ssilva1/*"
+          "run-actions-1-azure-eastus.actions.githubusercontent.com:sub": "repo:ssilva1/*"
         }
       }
     }
@@ -73,7 +74,7 @@ resource "aws_iam_role" "rol_github" {
 EOF
 }
 
-# 3. Adjuntar los permisos de administrador al nuevo rol
+# 3. Adjuntar los permisos de administrador al nuevo rol (Se mantiene igual)
 resource "aws_iam_role_policy_attachment" "admin_attach" {
   role       = aws_iam_role.rol_github.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
