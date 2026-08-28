@@ -63,3 +63,5 @@ jobs:
     # 6. Aplica los cambios automáticamente en AWS
     - name: OpenTofu Apply
       run: echo "Apply temporalmente deshabilitado"
+
+    # Debug OIDC
